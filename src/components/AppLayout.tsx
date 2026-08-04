@@ -74,8 +74,8 @@ export function AppLayout() {
           <div className="flex items-center gap-3">
             <ThemeToggle />
             <Link
-              to="/settings"
-              aria-label="Settings and profile"
+              to="/profile"
+              aria-label="Profile"
               className="hidden size-9 place-items-center rounded-full bg-navy-600 text-sm font-semibold text-white transition hover:bg-navy-700 sm:grid"
             >
               {initials(user?.username ?? '?')}
@@ -98,11 +98,11 @@ export function AppLayout() {
           <ClubsIcon />
           Clubs
         </NavLink>
-        <NavLink to="/settings" className={tabClasses}>
+        <NavLink to="/profile" className={tabClasses}>
           <span className="grid size-5.5 place-items-center">
             <SettingsIcon />
           </span>
-          {user?.username ?? 'Settings'}
+          {user?.username ?? 'Profile'}
         </NavLink>
       </nav>
     </div>

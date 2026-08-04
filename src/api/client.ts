@@ -68,6 +68,11 @@ export const api = {
   login: (body: { username: string; password: string }) =>
     request<AuthResponse>('/auth/login', { method: 'POST', body }),
 
+  getMe: () => request<User>('/users/me'),
+
+  updateMe: (body: { username?: string; email?: string; currentPassword?: string; newPassword?: string }) =>
+    request<User>('/users/me', { method: 'PATCH', body }),
+
   // Club responses are server-computed summaries (see Club.totalMembers etc. in types),
   // not the raw model — GET routes return the enriched object, mutating routes return
   // only a { message } ack, so callers should re-fetch after create/update/delete.

@@ -1,5 +1,5 @@
-import { createContext, useContext, useState, type ReactNode } from 'react'
-import { api, clearToken, decodeUserFromToken, getToken, setToken } from '../api/client'
+import { createContext, useContext, useEffect, useState, type ReactNode } from 'react'
+import { api, ApiError, clearToken, decodeUserFromToken, getToken, setToken } from '../api/client'
 import type { User } from '../types'
 
 interface AuthContextValue {
@@ -11,6 +11,12 @@ interface AuthContextValue {
   register: (username: string, email: string, password: string) => Promise<void>
   logout: () => void
   clearError: () => void
+  updateProfile: (body: {
+    username?: string
+    email?: string
+    currentPassword?: string
+    newPassword?: string
+  }) => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextValue | undefined>(undefined)
@@ -25,6 +31,13 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
+  // The JWT only carries {id, username} — hydrate the email (and anything
+  // else) from the API once, on load, for a session restored from storage.
+  useEffect(() => {
+    if (!getToken()) return
+    api.getMe().then(setUser).catch(() => {})
+  }, [])
+
   const login = async (username: string, password: string) => {
     setIsLoading(true)
     setError(null)
@@ -32,6 +45,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const res = await api.login({ username, password })
       setToken(res.token)
       setUser(decodeUserFromToken(res.token))
+      const me = await api.getMe()
+      setUser(me)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed')
       throw err
@@ -63,9 +78,25 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const clearError = () => setError(null)
 
+  const updateProfile = async (body: {
+    username?: string
+    email?: string
+    currentPassword?: string
+    newPassword?: string
+  }) => {
+    setError(null)
+    try {
+      const updated = await api.updateMe(body)
+      setUser(updated)
+    } catch (err) {
+      setError(err instanceof ApiError ? err.message : 'Could not update profile')
+      throw err
+    }
+  }
+
   return (
     <AuthContext.Provider
-      value={{ user, isAuthenticated: !!user, isLoading, error, login, register, logout, clearError }}
+      value={{ user, isAuthenticated: !!user, isLoading, error, login, register, logout, clearError, updateProfile }}
     >
       {children}
     </AuthContext.Provider>

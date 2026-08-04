@@ -9,7 +9,7 @@ import Clubs from './pages/Clubs'
 import ClubDetail from './pages/ClubDetail'
 import MemberDetail from './pages/MemberDetail'
 import Payout from './pages/Payout'
-import Settings from './pages/Settings'
+import Profile from './pages/Profile'
 
 function App() {
   return (
@@ -30,7 +30,7 @@ function App() {
         <Route path="/clubs/:id" element={<ClubDetail />} />
         <Route path="/clubs/:id/members/:memberId" element={<MemberDetail />} />
         <Route path="/clubs/:id/payout" element={<Payout />} />
-        <Route path="/settings" element={<Settings />} />
+        <Route path="/profile" element={<Profile />} />
       </Route>
 
       <Route path="*" element={<Navigate to="/" replace />} />

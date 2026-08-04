@@ -24,6 +24,7 @@ export interface Club {
   owed?: number
   totalOwed?: number
   inHand?: number
+  members?: Member[]
 }
 
 export interface Member {
