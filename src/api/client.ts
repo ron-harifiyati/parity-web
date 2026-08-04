@@ -83,6 +83,7 @@ export const api = {
 
   deleteClub: (id: string) => request<{ message: string }>(`/clubs/${id}`, { method: 'DELETE' }),
 
+  // clubAuth requires the ClubId header even though the club id is already in the URL
   checkMissedPayments: (id: string) =>
     request<{
       message: string
@@ -91,7 +92,7 @@ export const api = {
       missedCount?: number
       loanedCount?: number
       loanedMembers?: { id: string; username: string; amount: number }[]
-    }>(`/clubs/${id}/check-missed-payments`, { method: 'POST' }),
+    }>(`/clubs/${id}/check-missed-payments`, { method: 'POST', clubId: id }),
 
   accrueInterest: (id: string) =>
     request<{
@@ -99,15 +100,15 @@ export const api = {
       period: string
       totalInterestAccrued: number
       members: { memberId: string; username: string; principal: number; interest: number }[]
-    }>(`/clubs/${id}/accrue-interest`, { method: 'POST' }),
+    }>(`/clubs/${id}/accrue-interest`, { method: 'POST', clubId: id }),
 
   transferOwnership: (id: string, newOwnerUserId: string) =>
     request<{ message: string; clubId: string; newOwnerUserId: string; newOwnerUsername: string }>(
       `/clubs/${id}/transfer-ownership`,
-      { method: 'PATCH', body: { newOwnerUserId } },
+      { method: 'PATCH', clubId: id, body: { newOwnerUserId } },
     ),
 
-  getPayout: (id: string) => request<Payout>(`/clubs/${id}/payout`),
+  getPayout: (id: string) => request<Payout>(`/clubs/${id}/payout`, { clubId: id }),
 
   getMembers: (clubId: string) => request<Member[]>('/members', { clubId }),
 
