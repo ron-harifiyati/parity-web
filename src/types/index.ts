@@ -17,6 +17,13 @@ export interface Club {
   lendingLimit: number
   interestRate: number
   earlyWithdrawalPenalty: number
+  /** Only present on GET /clubs and GET /clubs/:id — server-computed, not stored */
+  totalMembers?: number
+  totalInvestment?: number
+  totalInterest?: number
+  owed?: number
+  totalOwed?: number
+  inHand?: number
 }
 
 export interface Member {
@@ -30,10 +37,32 @@ export interface Member {
   withdrawnAt: string | null
   investment: number
   interestAcrued: number
+  /** Interest paid directly into the pool (separate from accrual) to help qualify for the ≥$25 interest-share bonus */
+  directInterestPayment: number
   totalInvestment: number
   owing: number
   interestOwing: number
   totalOwing: number
+}
+
+export interface PayoutMember {
+  memberId: string
+  username: string
+  baseShare: number
+  interestShare: number
+  total: number
+  outstandingDebt: number
+}
+
+export interface Payout {
+  clubId: string
+  clubTitle: string
+  totalContributions: number
+  totalInterestPool: number
+  baseSharePerMember: number
+  interestSharePerQualifier: number
+  numberOfQualifiers: number
+  payouts: PayoutMember[]
 }
 
 export interface Transaction {
