@@ -2,6 +2,7 @@ import { type FormEvent, useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { api, ApiError } from '../api/client'
 import { ConfirmDialog } from '../components/ConfirmDialog'
+import { paletteForString } from '../components/icons'
 import { useAuth } from '../context/AuthContext'
 import { currentPeriod } from '../lib/period'
 import { useClubRole } from '../lib/roles'
@@ -59,7 +60,7 @@ export default function MemberDetail() {
   const canManage = isTreasurer && !member.withdrawnAt
 
   return (
-    <div className="mx-auto max-w-lg">
+    <div>
       <Link
         to={`/clubs/${clubId}`}
         className="text-sm font-medium text-charcoal-500 hover:text-charcoal-700 dark:text-charcoal-400 dark:hover:text-charcoal-200"
@@ -68,21 +69,30 @@ export default function MemberDetail() {
       </Link>
 
       <div className="mt-2 flex items-center gap-3">
-        <h1 className="text-2xl font-bold text-charcoal-900 dark:text-white">{member.username}</h1>
-        {member.isTreasurer && (
-          <span className="rounded-full bg-gold-100 px-2.5 py-1 text-xs font-semibold text-gold-700 dark:bg-gold-500/15 dark:text-gold-400">
-            Treasurer
-          </span>
-        )}
-        {member.withdrawnAt && (
-          <span className="rounded-full bg-charcoal-200 px-2.5 py-1 text-xs font-semibold text-charcoal-600 dark:bg-charcoal-800 dark:text-charcoal-300">
-            Withdrawn
-          </span>
-        )}
+        <span
+          className={`grid size-11 shrink-0 place-items-center rounded-full bg-gradient-to-br ${paletteForString(member.username)} text-sm font-bold text-white`}
+        >
+          {member.username.slice(0, 2).toUpperCase()}
+        </span>
+        <div>
+          <div className="flex flex-wrap items-center gap-2">
+            <h1 className="text-2xl font-bold text-charcoal-900 sm:text-3xl dark:text-white">{member.username}</h1>
+            {member.isTreasurer && (
+              <span className="rounded-full bg-gold-100 px-2.5 py-1 text-xs font-semibold text-gold-700 dark:bg-gold-500/15 dark:text-gold-400">
+                Treasurer
+              </span>
+            )}
+            {member.withdrawnAt && (
+              <span className="rounded-full bg-charcoal-200 px-2.5 py-1 text-xs font-semibold text-charcoal-600 dark:bg-charcoal-800 dark:text-charcoal-300">
+                Withdrawn
+              </span>
+            )}
+          </div>
+          <p className="text-sm text-charcoal-500 dark:text-charcoal-400">{member.email}</p>
+        </div>
       </div>
-      <p className="text-sm text-charcoal-500 dark:text-charcoal-400">{member.email}</p>
 
-      <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3">
+      <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
         <Stat label="Invested" value={`$${member.investment}`} />
         <Stat label="Interest earned" value={`$${member.interestAcrued}`} />
         <Stat label="Direct interest paid" value={`$${member.directInterestPayment}`} accent="gold" />
@@ -91,44 +101,54 @@ export default function MemberDetail() {
         <Stat label="Total owing" value={`$${member.totalOwing}`} />
       </div>
 
-      {canManage && (
-        <>
-          <TransactionForm clubId={clubId} memberId={memberId} onDone={load} />
-          <InterestPoolForm clubId={clubId} memberId={memberId} onDone={load} />
-        </>
-      )}
-
-      {isOwner && (
-        <div className="mt-6 rounded-2xl border border-charcoal-200 bg-white p-5 dark:border-charcoal-800 dark:bg-charcoal-900">
-          <p className="font-medium text-charcoal-900 dark:text-white">Manage member</p>
-          <div className="mt-3 flex flex-col gap-2">
-            <ToggleTreasurerButton clubId={clubId} memberId={memberId} member={member} onDone={load} />
-            {!member.withdrawnAt && (
-              <button
-                type="button"
-                disabled={isSelfOwner}
-                onClick={() => setConfirmAction('withdraw')}
-                title={isSelfOwner ? 'Transfer ownership before withdrawing yourself' : undefined}
-                className="rounded-full border border-gold-300 py-2.5 text-sm font-semibold text-gold-700 hover:bg-gold-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gold-500/30 dark:text-gold-400 dark:hover:bg-gold-500/10"
-              >
-                Withdraw member
-              </button>
-            )}
-            <button
-              type="button"
-              onClick={() => setConfirmAction('remove')}
-              className="rounded-full border border-red-200 py-2.5 text-sm font-semibold text-red-700 hover:bg-red-50 dark:border-red-500/20 dark:text-red-400 dark:hover:bg-red-500/10"
-            >
-              Remove from club
-            </button>
-          </div>
-          {isSelfOwner && (
-            <p className="mt-2 text-xs text-charcoal-500 dark:text-charcoal-400">
-              You're the club owner — transfer ownership before you can withdraw.
-            </p>
+      <div className="mt-6 grid gap-6 lg:grid-cols-3 lg:items-start">
+        <div className="space-y-6 lg:col-span-2">
+          {canManage ? (
+            <>
+              <TransactionForm clubId={clubId} memberId={memberId} onDone={load} />
+              <InterestPoolForm clubId={clubId} memberId={memberId} onDone={load} />
+            </>
+          ) : (
+            <div className="rounded-2xl border border-dashed border-charcoal-300 p-6 text-center text-sm text-charcoal-500 dark:border-charcoal-700 dark:text-charcoal-400">
+              {member.withdrawnAt
+                ? 'This member has withdrawn — no further transactions can be recorded.'
+                : 'Only the club owner or treasurer can record transactions.'}
+            </div>
           )}
         </div>
-      )}
+
+        {isOwner && (
+          <div className="rounded-2xl border border-charcoal-200 bg-white p-5 dark:border-charcoal-800 dark:bg-charcoal-900">
+            <p className="font-medium text-charcoal-900 dark:text-white">Manage member</p>
+            <div className="mt-3 flex flex-col gap-2">
+              <ToggleTreasurerButton clubId={clubId} memberId={memberId} member={member} onDone={load} />
+              {!member.withdrawnAt && (
+                <button
+                  type="button"
+                  disabled={isSelfOwner}
+                  onClick={() => setConfirmAction('withdraw')}
+                  title={isSelfOwner ? 'Transfer ownership before withdrawing yourself' : undefined}
+                  className="rounded-full border border-gold-300 py-2.5 text-sm font-semibold text-gold-700 hover:bg-gold-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-gold-500/30 dark:text-gold-400 dark:hover:bg-gold-500/10"
+                >
+                  Withdraw member
+                </button>
+              )}
+              <button
+                type="button"
+                onClick={() => setConfirmAction('remove')}
+                className="rounded-full border border-red-200 py-2.5 text-sm font-semibold text-red-700 hover:bg-red-50 dark:border-red-500/20 dark:text-red-400 dark:hover:bg-red-500/10"
+              >
+                Remove from club
+              </button>
+            </div>
+            {isSelfOwner && (
+              <p className="mt-2 text-xs text-charcoal-500 dark:text-charcoal-400">
+                You're the club owner — transfer ownership before you can withdraw.
+              </p>
+            )}
+          </div>
+        )}
+      </div>
 
       {confirmAction === 'withdraw' && (
         <ConfirmDialog
@@ -223,7 +243,7 @@ function TransactionForm({ clubId, memberId, onDone }: { clubId: string; memberI
   return (
     <form
       onSubmit={handleSubmit}
-      className="mt-6 space-y-3 rounded-2xl border border-charcoal-200 bg-white p-5 dark:border-charcoal-800 dark:bg-charcoal-900"
+      className="space-y-3 rounded-2xl border border-charcoal-200 bg-white p-5 dark:border-charcoal-800 dark:bg-charcoal-900"
     >
       <p className="font-medium text-charcoal-900 dark:text-white">Record transaction</p>
 
@@ -322,7 +342,7 @@ function InterestPoolForm({ clubId, memberId, onDone }: { clubId: string; member
   return (
     <form
       onSubmit={handleSubmit}
-      className="mt-4 space-y-3 rounded-2xl border border-charcoal-200 bg-white p-5 dark:border-charcoal-800 dark:bg-charcoal-900"
+      className="space-y-3 rounded-2xl border border-charcoal-200 bg-white p-5 dark:border-charcoal-800 dark:bg-charcoal-900"
     >
       <p className="font-medium text-charcoal-900 dark:text-white">Pay into interest pool</p>
       <p className="text-xs text-charcoal-500 dark:text-charcoal-400">

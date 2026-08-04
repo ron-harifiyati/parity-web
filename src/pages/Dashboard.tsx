@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useState, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import { api, ApiError } from '../api/client'
 import { ClubCard } from '../components/ClubCard'
+import { BanknotesIcon, StarIcon, TrendingUpIcon, UsersIcon, WalletIcon } from '../components/icons'
 import { useAuth } from '../context/AuthContext'
 import type { Club } from '../types'
 
@@ -20,29 +21,28 @@ export default function Dashboard() {
   }, [])
 
   const totalMonthly = clubs.reduce((sum, c) => sum + c.monthlyContribution, 0)
+  const totalInvested = clubs.reduce((sum, c) => sum + (c.totalInvestment ?? 0), 0)
+  const totalOwed = clubs.reduce((sum, c) => sum + (c.totalOwed ?? 0), 0)
+  const avgInterest = clubs.length ? Math.round(clubs.reduce((s, c) => s + c.interestRate, 0) / clubs.length) : 0
 
   return (
     <div>
-      <h1 className="text-2xl font-bold text-charcoal-900 dark:text-white">
+      <h1 className="text-2xl font-bold text-charcoal-900 sm:text-3xl dark:text-white">
         Welcome back{user ? `, ${user.username}` : ''}
       </h1>
       <p className="mt-1 text-sm text-charcoal-600 dark:text-charcoal-300">Here's where your circles stand.</p>
 
-      <div className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
-        <div className="rounded-2xl border border-charcoal-200 bg-white p-4 dark:border-charcoal-800 dark:bg-charcoal-900">
-          <p className="text-xs font-medium text-charcoal-500 dark:text-charcoal-400">Your clubs</p>
-          <p className="mt-1 text-2xl font-bold text-charcoal-900 dark:text-white">{clubs.length}</p>
-        </div>
-        <div className="rounded-2xl border border-charcoal-200 bg-white p-4 dark:border-charcoal-800 dark:bg-charcoal-900">
-          <p className="text-xs font-medium text-charcoal-500 dark:text-charcoal-400">Combined monthly</p>
-          <p className="mt-1 text-2xl font-bold text-primary-600 dark:text-primary-400">${totalMonthly}</p>
-        </div>
-        <div className="rounded-2xl border border-charcoal-200 bg-white p-4 dark:border-charcoal-800 dark:bg-charcoal-900">
-          <p className="text-xs font-medium text-charcoal-500 dark:text-charcoal-400">Avg. interest</p>
-          <p className="mt-1 text-2xl font-bold text-gold-600 dark:text-gold-400">
-            {clubs.length ? Math.round(clubs.reduce((s, c) => s + c.interestRate, 0) / clubs.length) : 0}%
-          </p>
-        </div>
+      <div className="mt-6 grid grid-cols-2 gap-3 lg:grid-cols-5">
+        <StatCard icon={<UsersIcon />} tone="navy" label="Your clubs" value={String(clubs.length)} />
+        <StatCard icon={<WalletIcon />} tone="primary" label="Total invested" value={`$${totalInvested.toLocaleString()}`} />
+        <StatCard icon={<BanknotesIcon />} tone="primary" label="Combined monthly" value={`$${totalMonthly}`} />
+        <StatCard
+          icon={<TrendingUpIcon />}
+          tone={totalOwed > 0 ? 'red' : 'navy'}
+          label="Outstanding debt"
+          value={`$${totalOwed.toLocaleString()}`}
+        />
+        <StatCard icon={<StarIcon />} tone="gold" label="Avg. interest" value={`${avgInterest}%`} />
       </div>
 
       <div className="mt-8 flex items-center justify-between">
@@ -76,13 +76,40 @@ export default function Dashboard() {
         )}
 
         {!isLoading && !error && clubs.length > 0 && (
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-            {clubs.slice(0, 6).map((club) => (
+          <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {clubs.slice(0, 8).map((club) => (
               <ClubCard key={club.id} club={club} />
             ))}
           </div>
         )}
       </div>
+    </div>
+  )
+}
+
+const TONE_CLASSES = {
+  primary: 'bg-primary-50 text-primary-600 dark:bg-primary-500/10 dark:text-primary-400',
+  navy: 'bg-navy-50 text-navy-600 dark:bg-navy-500/10 dark:text-navy-300',
+  gold: 'bg-gold-50 text-gold-600 dark:bg-gold-500/10 dark:text-gold-400',
+  red: 'bg-red-50 text-red-600 dark:bg-red-500/10 dark:text-red-400',
+}
+
+function StatCard({
+  icon,
+  label,
+  value,
+  tone,
+}: {
+  icon: ReactNode
+  label: string
+  value: string
+  tone: keyof typeof TONE_CLASSES
+}) {
+  return (
+    <div className="rounded-2xl border border-charcoal-200 bg-white p-4 dark:border-charcoal-800 dark:bg-charcoal-900">
+      <span className={`grid size-9 place-items-center rounded-xl ${TONE_CLASSES[tone]}`}>{icon}</span>
+      <p className="mt-3 text-xs font-medium text-charcoal-500 dark:text-charcoal-400">{label}</p>
+      <p className="mt-0.5 text-xl font-bold text-charcoal-900 dark:text-white">{value}</p>
     </div>
   )
 }

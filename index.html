@@ -11,8 +11,11 @@
     <title>Parity — Save Together, Grow Together</title>
     <script>
       (function () {
-        var stored = localStorage.getItem('parity-theme');
+        // Signed-out visitors always get the OS/browser theme; the saved
+        // preference only applies once there's an active session.
         var prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        var isAuthenticated = !!localStorage.getItem('parity-token');
+        var stored = isAuthenticated ? localStorage.getItem('parity-theme') : null;
         if (stored === 'dark' || (!stored && prefersDark)) {
           document.documentElement.classList.add('dark');
         }

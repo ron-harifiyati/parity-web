@@ -2,7 +2,9 @@ import { type FormEvent, useEffect, useState } from 'react'
 import { Link, useNavigate, useParams } from 'react-router-dom'
 import { api, ApiError } from '../api/client'
 import { ConfirmDialog } from '../components/ConfirmDialog'
+import { paletteForString } from '../components/icons'
 import { useAuth } from '../context/AuthContext'
+import { CLUB_LIMITS } from '../lib/clubLimits'
 import { useClubRole } from '../lib/roles'
 import type { Club, Member } from '../types'
 
@@ -45,13 +47,13 @@ export default function ClubDetail() {
   if (!club || !id) return null
 
   return (
-    <div className="mx-auto max-w-2xl">
+    <div>
       <Link to="/clubs" className="text-sm font-medium text-charcoal-500 hover:text-charcoal-700 dark:text-charcoal-400 dark:hover:text-charcoal-200">
         ← My Clubs
       </Link>
 
       <div className="mt-2 flex flex-wrap items-center gap-2">
-        <h1 className="text-2xl font-bold text-charcoal-900 dark:text-white">{club.title}</h1>
+        <h1 className="text-2xl font-bold text-charcoal-900 sm:text-3xl dark:text-white">{club.title}</h1>
         {isOwner && (
           <span className="rounded-full bg-navy-100 px-2.5 py-1 text-xs font-semibold text-navy-700 dark:bg-navy-500/15 dark:text-navy-300">
             Owner
@@ -71,63 +73,77 @@ export default function ClubDetail() {
         <Stat label="Lending limit" value={`$${club.lendingLimit}`} />
       </div>
 
-      <Link
-        to={`/clubs/${id}/payout`}
-        className="mt-4 flex items-center justify-between rounded-2xl border border-gold-200 bg-gold-50 p-4 text-sm font-semibold text-gold-800 hover:bg-gold-100 dark:border-gold-500/20 dark:bg-gold-500/10 dark:text-gold-300 dark:hover:bg-gold-500/15"
-      >
-        View year-end payout calculator
-        <span aria-hidden>→</span>
-      </Link>
-
-      {isTreasurer && <TreasurerTools clubId={id} onDone={load} />}
-
-      <h2 className="mt-8 text-lg font-semibold text-charcoal-900 dark:text-white">Members ({members.length})</h2>
-      <div className="mt-3 divide-y divide-charcoal-200 overflow-hidden rounded-2xl border border-charcoal-200 bg-white dark:divide-charcoal-800 dark:border-charcoal-800 dark:bg-charcoal-900">
-        {members.length === 0 && (
-          <p className="p-4 text-sm text-charcoal-500 dark:text-charcoal-400">No members yet.</p>
-        )}
-        {members.map((member) => (
-          <Link
-            key={member.id}
-            to={`/clubs/${id}/members/${member.id}`}
-            className="flex items-center justify-between gap-3 p-4 transition hover:bg-charcoal-50 dark:hover:bg-charcoal-800/60"
-          >
-            <div>
-              <p className="text-sm font-medium text-charcoal-900 dark:text-white">
-                {member.username}
-                {member.isTreasurer && (
-                  <span className="ml-2 rounded-full bg-gold-100 px-2 py-0.5 text-[11px] font-semibold text-gold-700 dark:bg-gold-500/15 dark:text-gold-400">
-                    Treasurer
-                  </span>
-                )}
-                {member.withdrawnAt && (
-                  <span className="ml-2 rounded-full bg-charcoal-200 px-2 py-0.5 text-[11px] font-semibold text-charcoal-600 dark:bg-charcoal-800 dark:text-charcoal-300">
-                    Withdrawn
-                  </span>
-                )}
-              </p>
-              <p className="text-xs text-charcoal-500 dark:text-charcoal-400">
-                Invested ${member.totalInvestment} · Owing ${member.totalOwing}
-              </p>
+      <div className="mt-6 grid gap-6 lg:grid-cols-3 lg:items-start">
+        <div className="space-y-6 lg:col-span-2">
+          <div className="rounded-2xl border border-charcoal-200 bg-white dark:border-charcoal-800 dark:bg-charcoal-900">
+            <div className="flex items-center justify-between p-5 pb-0">
+              <h2 className="text-lg font-semibold text-charcoal-900 dark:text-white">Members ({members.length})</h2>
             </div>
-            <span aria-hidden className="text-charcoal-300 dark:text-charcoal-600">
-              →
-            </span>
+
+            <div className="mt-4 divide-y divide-charcoal-200 dark:divide-charcoal-800">
+              {members.length === 0 && (
+                <p className="p-5 text-sm text-charcoal-500 dark:text-charcoal-400">No members yet.</p>
+              )}
+              {members.map((member) => (
+                <Link
+                  key={member.id}
+                  to={`/clubs/${id}/members/${member.id}`}
+                  className="flex items-center gap-3 p-4 transition hover:bg-charcoal-50 sm:px-5 dark:hover:bg-charcoal-800/60"
+                >
+                  <span
+                    className={`grid size-9 shrink-0 place-items-center rounded-full bg-gradient-to-br ${paletteForString(member.username)} text-xs font-bold text-white`}
+                  >
+                    {member.username.slice(0, 2).toUpperCase()}
+                  </span>
+                  <div className="min-w-0 flex-1">
+                    <p className="flex flex-wrap items-center gap-1.5 text-sm font-medium text-charcoal-900 dark:text-white">
+                      {member.username}
+                      {member.isTreasurer && (
+                        <span className="rounded-full bg-gold-100 px-2 py-0.5 text-[11px] font-semibold text-gold-700 dark:bg-gold-500/15 dark:text-gold-400">
+                          Treasurer
+                        </span>
+                      )}
+                      {member.withdrawnAt && (
+                        <span className="rounded-full bg-charcoal-200 px-2 py-0.5 text-[11px] font-semibold text-charcoal-600 dark:bg-charcoal-800 dark:text-charcoal-300">
+                          Withdrawn
+                        </span>
+                      )}
+                    </p>
+                    <p className="text-xs text-charcoal-500 dark:text-charcoal-400">
+                      Invested ${member.totalInvestment} · Owing ${member.totalOwing}
+                    </p>
+                  </div>
+                  <span aria-hidden className="text-charcoal-300 dark:text-charcoal-600">
+                    →
+                  </span>
+                </Link>
+              ))}
+            </div>
+
+            {isOwner && (
+              <div className="border-t border-charcoal-200 p-4 sm:p-5 dark:border-charcoal-800">
+                <AddMemberForm clubId={id} onDone={load} />
+              </div>
+            )}
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          <Link
+            to={`/clubs/${id}/payout`}
+            className="flex items-center justify-between rounded-2xl border border-gold-200 bg-gold-50 p-4 text-sm font-semibold text-gold-800 hover:bg-gold-100 dark:border-gold-500/20 dark:bg-gold-500/10 dark:text-gold-300 dark:hover:bg-gold-500/15"
+          >
+            Year-end payout calculator
+            <span aria-hidden>→</span>
           </Link>
-        ))}
+
+          {isTreasurer && <TreasurerTools clubId={id} onDone={load} />}
+          {isOwner && <OwnershipTransfer clubId={id} ownerId={club.userId} members={members} onDone={load} />}
+          {isOwner && (
+            <ClubSettingsForm club={club} onSaved={load} onDeleteRequest={() => setShowDeleteConfirm(true)} />
+          )}
+        </div>
       </div>
-
-      {isOwner && <AddMemberForm clubId={id} onDone={load} />}
-
-      {isOwner && <OwnershipTransfer clubId={id} ownerId={club.userId} members={members} onDone={load} />}
-
-      {isOwner && (
-        <ClubSettingsForm
-          club={club}
-          onSaved={load}
-          onDeleteRequest={() => setShowDeleteConfirm(true)}
-        />
-      )}
 
       {showDeleteConfirm && (
         <ConfirmDialog
@@ -203,7 +219,7 @@ function TreasurerTools({ clubId, onDone }: { clubId: string; onDone: () => void
   }
 
   return (
-    <div className="mt-6 rounded-2xl border border-charcoal-200 bg-white dark:border-charcoal-800 dark:bg-charcoal-900">
+    <div className="rounded-2xl border border-charcoal-200 bg-white dark:border-charcoal-800 dark:bg-charcoal-900">
       <button
         type="button"
         onClick={() => setIsOpen((v) => !v)}
@@ -271,7 +287,7 @@ function AddMemberForm({ clubId, onDone }: { clubId: string; onDone: () => void 
   }
 
   return (
-    <form onSubmit={handleSubmit} className="mt-4">
+    <form onSubmit={handleSubmit}>
       <div className="flex gap-2">
         <input
           type="text"
@@ -332,7 +348,7 @@ function OwnershipTransfer({
   if (activeMembers.length <= 1) return null
 
   return (
-    <div className="mt-6 rounded-2xl border border-charcoal-200 bg-white p-5 dark:border-charcoal-800 dark:bg-charcoal-900">
+    <div className="rounded-2xl border border-charcoal-200 bg-white p-5 dark:border-charcoal-800 dark:bg-charcoal-900">
       <button type="button" onClick={() => setIsOpen((v) => !v)} className="w-full text-left">
         <p className="font-medium text-charcoal-900 dark:text-white">Transfer ownership</p>
         <p className="mt-1 text-xs text-charcoal-500 dark:text-charcoal-400">
@@ -409,7 +425,7 @@ function ClubSettingsForm({
   }
 
   return (
-    <div className="mt-6 rounded-2xl border border-charcoal-200 bg-white dark:border-charcoal-800 dark:bg-charcoal-900">
+    <div className="rounded-2xl border border-charcoal-200 bg-white dark:border-charcoal-800 dark:bg-charcoal-900">
       <button
         type="button"
         onClick={() => setIsOpen((v) => !v)}
@@ -434,15 +450,34 @@ function ClubSettingsForm({
             />
           </div>
           <div className="grid grid-cols-2 gap-3">
-            <NumberField label="Monthly $" value={monthlyContribution} onChange={setMonthlyContribution} />
-            <NumberField label="Interest %" value={interestRate} onChange={setInterestRate} min={0} />
-            <NumberField label="Payment day" value={paymentDay} onChange={setPaymentDay} min={1} />
-            <NumberField label="Grace days" value={gracePeriodDays} onChange={setGracePeriodDays} min={0} />
             <NumberField
-              label="Withdrawal penalty $"
+              label={`Monthly $ (${CLUB_LIMITS.monthlyContribution.min}-${CLUB_LIMITS.monthlyContribution.max})`}
+              value={monthlyContribution}
+              onChange={setMonthlyContribution}
+              min={CLUB_LIMITS.monthlyContribution.min}
+              max={CLUB_LIMITS.monthlyContribution.max}
+            />
+            <NumberField
+              label={`Interest % (${CLUB_LIMITS.interestRate.min}-${CLUB_LIMITS.interestRate.max})`}
+              value={interestRate}
+              onChange={setInterestRate}
+              min={CLUB_LIMITS.interestRate.min}
+              max={CLUB_LIMITS.interestRate.max}
+            />
+            <NumberField label="Payment day (1-31)" value={paymentDay} onChange={setPaymentDay} min={1} max={31} />
+            <NumberField
+              label={`Grace days (${CLUB_LIMITS.gracePeriodDays.min}-${CLUB_LIMITS.gracePeriodDays.max})`}
+              value={gracePeriodDays}
+              onChange={setGracePeriodDays}
+              min={CLUB_LIMITS.gracePeriodDays.min}
+              max={CLUB_LIMITS.gracePeriodDays.max}
+            />
+            <NumberField
+              label={`Withdrawal penalty $ (${CLUB_LIMITS.earlyWithdrawalPenalty.min}-${CLUB_LIMITS.earlyWithdrawalPenalty.max})`}
               value={earlyWithdrawalPenalty}
               onChange={setEarlyWithdrawalPenalty}
-              min={0}
+              min={CLUB_LIMITS.earlyWithdrawalPenalty.min}
+              max={CLUB_LIMITS.earlyWithdrawalPenalty.max}
             />
           </div>
 
@@ -479,11 +514,13 @@ function NumberField({
   value,
   onChange,
   min = 0,
+  max,
 }: {
   label: string
   value: number
   onChange: (n: number) => void
   min?: number
+  max?: number
 }) {
   return (
     <div>
@@ -491,6 +528,8 @@ function NumberField({
       <input
         type="number"
         min={min}
+        max={max}
+        required
         value={value}
         onChange={(e) => onChange(Number(e.target.value))}
         className="mt-1 w-full rounded-xl border border-charcoal-300 bg-white px-3 py-2.5 text-sm text-charcoal-900 outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-charcoal-700 dark:bg-charcoal-950 dark:text-white"

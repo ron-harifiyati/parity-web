@@ -1,5 +1,4 @@
 import { Link, useNavigate } from 'react-router-dom'
-import { ThemeToggle } from './ThemeToggle'
 
 export function PublicNav() {
   const navigate = useNavigate()
@@ -15,7 +14,6 @@ export function PublicNav() {
         </Link>
 
         <div className="flex items-center gap-3">
-          <ThemeToggle />
           <button
             type="button"
             onClick={() => navigate('/login')}

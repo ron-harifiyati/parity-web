@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { Link, useParams } from 'react-router-dom'
 import { api, ApiError } from '../api/client'
+import { paletteForString } from '../components/icons'
 import type { Payout as PayoutType } from '../types'
 
 export default function Payout() {
@@ -28,7 +29,7 @@ export default function Payout() {
   if (!payout || !clubId) return null
 
   return (
-    <div className="mx-auto max-w-2xl">
+    <div className="max-w-4xl">
       <Link
         to={`/clubs/${clubId}`}
         className="text-sm font-medium text-charcoal-500 hover:text-charcoal-700 dark:text-charcoal-400 dark:hover:text-charcoal-200"
@@ -36,7 +37,7 @@ export default function Payout() {
         ← {payout.clubTitle}
       </Link>
 
-      <h1 className="mt-2 text-2xl font-bold text-charcoal-900 dark:text-white">Year-end payout</h1>
+      <h1 className="mt-2 text-2xl font-bold text-charcoal-900 sm:text-3xl dark:text-white">Year-end payout</h1>
       <p className="mt-1 text-sm text-charcoal-600 dark:text-charcoal-300">
         Each member's base share, plus an interest share for those who've earned or paid at least $25 in interest.
       </p>
@@ -50,9 +51,14 @@ export default function Payout() {
 
       <div className="mt-6 divide-y divide-charcoal-200 overflow-hidden rounded-2xl border border-charcoal-200 bg-white dark:divide-charcoal-800 dark:border-charcoal-800 dark:bg-charcoal-900">
         {payout.payouts.map((p) => (
-          <div key={p.memberId} className="flex items-center justify-between gap-3 p-4">
-            <div>
-              <p className="text-sm font-medium text-charcoal-900 dark:text-white">{p.username}</p>
+          <div key={p.memberId} className="flex items-center gap-3 p-4 sm:px-5">
+            <span
+              className={`grid size-9 shrink-0 place-items-center rounded-full bg-gradient-to-br ${paletteForString(p.username)} text-xs font-bold text-white`}
+            >
+              {p.username.slice(0, 2).toUpperCase()}
+            </span>
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-sm font-medium text-charcoal-900 dark:text-white">{p.username}</p>
               <p className="text-xs text-charcoal-500 dark:text-charcoal-400">
                 Base ${p.baseShare}
                 {p.interestShare > 0 && (
@@ -62,7 +68,7 @@ export default function Payout() {
               </p>
             </div>
             <p
-              className={`text-lg font-bold ${
+              className={`shrink-0 text-lg font-bold ${
                 p.total >= 0 ? 'text-primary-600 dark:text-primary-400' : 'text-red-600 dark:text-red-400'
               }`}
             >
