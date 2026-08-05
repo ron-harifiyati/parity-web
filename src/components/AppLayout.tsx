@@ -1,6 +1,5 @@
 import { Link, NavLink, Outlet } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { ThemeToggle } from './ThemeToggle'
 
 const navLinkClasses = ({ isActive }: { isActive: boolean }) =>
   `rounded-full px-3 py-1.5 text-sm font-medium transition ${
@@ -72,7 +71,6 @@ export function AppLayout() {
           </div>
 
           <div className="flex items-center gap-3">
-            <ThemeToggle />
             <Link
               to="/profile"
               aria-label="Profile"
