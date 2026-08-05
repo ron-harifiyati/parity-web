@@ -2,9 +2,11 @@ import { motion } from 'framer-motion'
 import type { ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import heroClubDetail from '../assets/hero-clubdetail.png'
-import heroMemberDetail from '../assets/hero-memberdetail.png'
-import heroPayout from '../assets/hero-payout.png'
 import { PublicNav } from '../components/PublicNav'
+
+// Only the hero above uses a real product screenshot — these two are editorial photography.
+const growthPhoto = 'https://images.unsplash.com/photo-1579621970563-ebec7560ff3e?w=900&q=80&auto=format&fit=crop'
+const agreementPhoto = 'https://images.unsplash.com/photo-1450101499163-c8848c66ca85?w=900&q=80&auto=format&fit=crop'
 
 const fadeUp = {
   hidden: { opacity: 0, y: 20 },
@@ -67,22 +69,22 @@ export default function Landing() {
         </motion.div>
       </section>
 
-      {/* Feature 1 — payout screenshot */}
+      {/* Feature 1 */}
       <FeaturePanel
         eyebrow="Year-end payout"
         title="Payouts calculate themselves."
         body="Base share, interest share for qualifying members, outstanding debt deducted — Parity works out each member's final number automatically, before anyone has to ask."
-        image={heroPayout}
-        imageAlt="Parity payout calculator showing each member's base share and total"
+        image={growthPhoto}
+        imageAlt="A small plant sprouting from a pile of coins, representing savings that grow"
       />
 
-      {/* Feature 2 — member detail screenshot */}
+      {/* Feature 2 */}
       <FeaturePanel
         eyebrow="Loans & repayments"
         title="Every loan, tracked to the cent."
         body="Treasurers record contributions, loans, and repayments in seconds. Interest accrues on schedule, and every member can see exactly what they owe and what they've paid."
-        image={heroMemberDetail}
-        imageAlt="Parity member page showing a recorded loan and transaction form"
+        image={agreementPhoto}
+        imageAlt="A hand signing a loan agreement with a pen"
         reverse
       />
 
@@ -211,9 +213,9 @@ function FeaturePanel({
           viewport={{ once: true, margin: '-80px' }}
           transition={{ duration: 0.5 }}
         >
-          <BrowserFrame>
-            <img src={image} alt={imageAlt} className="w-full" />
-          </BrowserFrame>
+          <div className="overflow-hidden rounded-2xl border border-charcoal-200 shadow-2xl shadow-charcoal-900/10 dark:border-charcoal-800">
+            <img src={image} alt={imageAlt} className="h-80 w-full object-cover" loading="lazy" />
+          </div>
         </motion.div>
       </div>
     </section>
