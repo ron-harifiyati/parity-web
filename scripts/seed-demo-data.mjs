@@ -19,6 +19,12 @@
 const API_BASE_URL = process.env.API_BASE_URL ?? 'http://localhost:3000'
 const PASSWORD = 'Password123!'
 
+// This account owns Club B (the richest scenario — loans, interest accrual, a real
+// payout bonus contrast) and is also added as a plain member of every other seeded
+// club below, so a single login can browse nearly all the demo data without switching
+// accounts.
+const HUB_USERNAME = 'nyasha_chikafu'
+
 /** Periods are generated relative to "now" so the script stays meaningful whenever it's run. */
 function periodMonthsAgo(n) {
   const d = new Date()
@@ -88,6 +94,14 @@ async function membersByUsername(token, clubId) {
 
 async function tx(token, clubId, memberId, body) {
   await req(`/members/${memberId}`, { method: 'PATCH', token, clubId, body })
+}
+
+/** Adds `username` to a club (as a plain member) unless already a member. Idempotent. */
+async function ensureMember(ownerToken, clubId, username) {
+  const members = await req('/members', { token: ownerToken, clubId })
+  if (members.some((m) => m.username === username)) return false
+  await addMember(ownerToken, clubId, username)
+  return true
 }
 
 async function main() {
@@ -451,7 +465,41 @@ async function main() {
     console.log()
   }
 
+  // ---------------------------------------------------------------------
+  // Hub account: add nyasha_chikafu (owner of Mbare Vendors Fund) as a
+  // plain member of every other seeded club, so one login can browse
+  // nearly everything without switching accounts.
+  // ---------------------------------------------------------------------
+  {
+    console.log(`Hub account: adding ${HUB_USERNAME} to the other clubs`)
+    const otherClubs = [
+      { owner: 'tendai_mukamuri', email: 'tendai.mukamuri@example.com', title: 'Sunrise Trading Circle' },
+      { owner: 'kudzai_mutasa', email: 'kudzai.mutasa@example.com', title: 'Chitungwiza Housing Club' },
+      { owner: 'takudzwa_moyo', email: 'takudzwa.moyo@example.com', title: 'Founders Stokvel' },
+      { owner: 'fadzai_mangwana', email: 'fadzai.mangwana@example.com', title: 'Borrowdale Business Circle' },
+      { owner: 'godfrey_nyamande', email: 'godfrey.nyamande@example.com', title: 'Highfield Traders Group' },
+      { owner: 'itai_masiyiwa', email: 'itai.masiyiwa@example.com', title: 'Glen View Pair Fund' },
+      { owner: 'simbarashe_jenya', email: 'simbarashe.jenya@example.com', title: 'Avondale Growth Club' },
+    ]
+    for (const { owner, email, title } of otherClubs) {
+      const ownerToken = await registerOrLogin(owner, email)
+      const clubs = await req('/clubs', { token: ownerToken })
+      const club = clubs.find((c) => c.title === title)
+      if (!club) {
+        console.log(`  ! could not find club "${title}", skipping`)
+        continue
+      }
+      const added = await ensureMember(ownerToken, club.id, HUB_USERNAME)
+      console.log(added ? `  + added ${HUB_USERNAME} to "${title}"` : `  · ${HUB_USERNAME} already a member of "${title}"`)
+    }
+    console.log()
+  }
+
   console.log('Done. All accounts use the password: ' + PASSWORD)
+  console.log(
+    `\nHub account for quick browsing: ${HUB_USERNAME} / ${PASSWORD} — owner+treasurer of Mbare Vendors Fund, ` +
+      `plain member of every other seeded club.`,
+  )
 }
 
 main().catch((err) => {
