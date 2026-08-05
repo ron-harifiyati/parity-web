@@ -78,6 +78,23 @@ export interface Transaction {
   withdrawalAmount: number
 }
 
+/**
+ * A transaction record enriched with the member's username, as returned by the
+ * paginated club records endpoint (see api.getClubTransactions).
+ */
+export interface TransactionRecord extends Transaction {
+  username: string
+  createdAt: string
+}
+
+export interface PaginatedTransactions {
+  transactions: TransactionRecord[]
+  page: number
+  limit: number
+  totalCount: number
+  totalPages: number
+}
+
 export interface AuthResponse {
   message: string
   token: string

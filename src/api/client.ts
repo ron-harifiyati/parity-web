@@ -1,4 +1,4 @@
-import type { AuthResponse, Club, Member, Payout, Transaction, User } from '../types'
+import type { AuthResponse, Club, Member, PaginatedTransactions, Payout, Transaction, User } from '../types'
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000'
 const TOKEN_KEY = 'parity-token'
@@ -114,6 +114,14 @@ export const api = {
     ),
 
   getPayout: (id: string) => request<Payout>(`/clubs/${id}/payout`, { clubId: id }),
+
+  /**
+   * Paginated transaction history for a club, newest first. Requires a matching
+   * `GET /clubs/:id/transactions?page=&limit=` route on parity-api — see the code
+   * comment on ClubRecords.tsx for the exact response shape this expects.
+   */
+  getClubTransactions: (clubId: string, page = 1, limit = 20) =>
+    request<PaginatedTransactions>(`/clubs/${clubId}/transactions?page=${page}&limit=${limit}`, { clubId }),
 
   getMembers: (clubId: string) => request<Member[]>('/members', { clubId }),
 

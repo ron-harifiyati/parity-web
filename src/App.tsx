@@ -7,6 +7,7 @@ import Register from './pages/Register'
 import Dashboard from './pages/Dashboard'
 import Clubs from './pages/Clubs'
 import ClubDetail from './pages/ClubDetail'
+import ClubRecords from './pages/ClubRecords'
 import MemberDetail from './pages/MemberDetail'
 import Payout from './pages/Payout'
 import Profile from './pages/Profile'
@@ -30,6 +31,7 @@ function App() {
         <Route path="/clubs/:id" element={<ClubDetail />} />
         <Route path="/clubs/:id/members/:memberId" element={<MemberDetail />} />
         <Route path="/clubs/:id/payout" element={<Payout />} />
+        <Route path="/clubs/:id/records" element={<ClubRecords />} />
         <Route path="/profile" element={<Profile />} />
       </Route>
 
