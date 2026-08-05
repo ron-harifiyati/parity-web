@@ -4,7 +4,6 @@ import { api, ApiError } from '../api/client'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { paletteForString } from '../components/icons'
 import { useAuth } from '../context/AuthContext'
-import { CLUB_LIMITS } from '../lib/clubLimits'
 import { useClubRole } from '../lib/roles'
 import type { Club, Member } from '../types'
 
@@ -73,6 +72,21 @@ export default function ClubDetail() {
         <Stat label="Lending limit" value={`$${club.lendingLimit}`} />
       </div>
 
+      <div className="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-3">
+        <Stat label="Total raised" value={`$${club.totalInvestment ?? 0}`} title="All contributions members have paid in" />
+        <Stat
+          label="Treasury (available)"
+          value={`$${club.inHand ?? 0}`}
+          accent="gold"
+          title="Cash the club is holding right now — contributions and interest paid in, minus what's currently out on loan. This is what's available to lend."
+        />
+        <Stat
+          label="Owed by members"
+          value={`$${club.totalOwed ?? 0}`}
+          title="What members currently owe in total — outstanding loan principal plus accrued interest they haven't paid back yet"
+        />
+      </div>
+
       <div className="mt-6 grid gap-6 lg:grid-cols-3 lg:items-start">
         <div className="space-y-6 lg:col-span-2">
           <div className="rounded-2xl border border-charcoal-200 bg-white dark:border-charcoal-800 dark:bg-charcoal-900">
@@ -98,6 +112,11 @@ export default function ClubDetail() {
                   <div className="min-w-0 flex-1">
                     <p className="flex flex-wrap items-center gap-1.5 text-sm font-medium text-charcoal-900 dark:text-white">
                       {member.username}
+                      {member.userId === user?.id && (
+                        <span className="rounded-full bg-primary-100 px-2 py-0.5 text-[11px] font-semibold text-primary-700 dark:bg-primary-500/15 dark:text-primary-400">
+                          You
+                        </span>
+                      )}
                       {member.isTreasurer && (
                         <span className="rounded-full bg-gold-100 px-2 py-0.5 text-[11px] font-semibold text-gold-700 dark:bg-gold-500/15 dark:text-gold-400">
                           Treasurer
@@ -137,6 +156,14 @@ export default function ClubDetail() {
             <span aria-hidden>→</span>
           </Link>
 
+          <Link
+            to={`/clubs/${id}/records`}
+            className="flex items-center justify-between rounded-2xl border border-charcoal-200 bg-white p-4 text-sm font-semibold text-charcoal-700 hover:bg-charcoal-50 dark:border-charcoal-800 dark:bg-charcoal-900 dark:text-charcoal-200 dark:hover:bg-charcoal-800/60"
+          >
+            Transaction records
+            <span aria-hidden>→</span>
+          </Link>
+
           {isTreasurer && <TreasurerTools clubId={id} onDone={load} />}
           {isOwner && <OwnershipTransfer clubId={id} ownerId={club.userId} members={members} onDone={load} />}
           {isOwner && (
@@ -162,9 +189,9 @@ export default function ClubDetail() {
   )
 }
 
-function Stat({ label, value, accent }: { label: string; value: string; accent?: 'gold' }) {
+function Stat({ label, value, accent, title }: { label: string; value: string; accent?: 'gold'; title?: string }) {
   return (
-    <div className="rounded-2xl border border-charcoal-200 bg-white p-4 dark:border-charcoal-800 dark:bg-charcoal-900">
+    <div className="rounded-2xl border border-charcoal-200 bg-white p-4 dark:border-charcoal-800 dark:bg-charcoal-900" title={title}>
       <p className="text-xs font-medium text-charcoal-500 dark:text-charcoal-400">{label}</p>
       <p
         className={`mt-1 text-lg font-bold ${
@@ -232,23 +259,36 @@ function TreasurerTools({ clubId, onDone }: { clubId: string; onDone: () => void
       </button>
       {isOpen && (
         <div className="space-y-3 border-t border-charcoal-200 p-5 dark:border-charcoal-800">
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <button
-              type="button"
-              onClick={handleCheckMissed}
-              disabled={isChecking}
-              className="flex-1 rounded-full border border-charcoal-300 py-2.5 text-sm font-semibold text-charcoal-700 hover:bg-charcoal-50 disabled:opacity-60 dark:border-charcoal-700 dark:text-charcoal-200 dark:hover:bg-charcoal-800"
-            >
-              {isChecking ? 'Checking…' : 'Check missed payments'}
-            </button>
-            <button
-              type="button"
-              onClick={handleAccrue}
-              disabled={isAccruing}
-              className="flex-1 rounded-full border border-charcoal-300 py-2.5 text-sm font-semibold text-charcoal-700 hover:bg-charcoal-50 disabled:opacity-60 dark:border-charcoal-700 dark:text-charcoal-200 dark:hover:bg-charcoal-800"
-            >
-              {isAccruing ? 'Accruing…' : 'Accrue interest'}
-            </button>
+          <div className="grid gap-3 sm:grid-cols-2">
+            <div>
+              <button
+                type="button"
+                onClick={handleCheckMissed}
+                disabled={isChecking}
+                className="w-full rounded-full border border-charcoal-300 py-2.5 text-sm font-semibold text-charcoal-700 hover:bg-charcoal-50 disabled:opacity-60 dark:border-charcoal-700 dark:text-charcoal-200 dark:hover:bg-charcoal-800"
+              >
+                {isChecking ? 'Checking…' : 'Check missed payments'}
+              </button>
+              <p className="mt-1.5 text-xs text-charcoal-500 dark:text-charcoal-400">
+                Looks at last month's period. Any member with no recorded transaction for it is marked as missed
+                and, if the club has auto-loans on, gets a loan for one month's contribution — a stand-in for the
+                payment they skipped.
+              </p>
+            </div>
+            <div>
+              <button
+                type="button"
+                onClick={handleAccrue}
+                disabled={isAccruing}
+                className="w-full rounded-full border border-charcoal-300 py-2.5 text-sm font-semibold text-charcoal-700 hover:bg-charcoal-50 disabled:opacity-60 dark:border-charcoal-700 dark:text-charcoal-200 dark:hover:bg-charcoal-800"
+              >
+                {isAccruing ? 'Accruing…' : 'Accrue interest'}
+              </button>
+              <p className="mt-1.5 text-xs text-charcoal-500 dark:text-charcoal-400">
+                Adds this month's interest to every member with an outstanding loan balance, based on the club's
+                interest rate. Safe to click more than once — it skips anyone already accrued this month.
+              </p>
+            </div>
           </div>
           {error && (
             <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-500/10 dark:text-red-400">
@@ -384,6 +424,14 @@ function OwnershipTransfer({
   )
 }
 
+/**
+ * Financial terms (monthly contribution, interest rate, payment day, grace period,
+ * withdrawal penalty) are shown read-only here, not editable. Changing them after
+ * members have already joined and contributed under the original terms wouldn't be
+ * fair to those members, so the only things an owner can change post-creation are the
+ * club's name and whether the club exists at all (delete). If you genuinely need
+ * different terms, create a new club.
+ */
 function ClubSettingsForm({
   club,
   onSaved,
@@ -395,30 +443,21 @@ function ClubSettingsForm({
 }) {
   const [isOpen, setIsOpen] = useState(false)
   const [title, setTitle] = useState(club.title)
-  const [monthlyContribution, setMonthlyContribution] = useState(club.monthlyContribution)
-  const [interestRate, setInterestRate] = useState(club.interestRate)
-  const [paymentDay, setPaymentDay] = useState(club.paymentDay)
-  const [gracePeriodDays, setGracePeriodDays] = useState(club.gracePeriodDays)
-  const [earlyWithdrawalPenalty, setEarlyWithdrawalPenalty] = useState(club.earlyWithdrawalPenalty)
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [success, setSuccess] = useState<string | null>(null)
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault()
     setError(null)
+    setSuccess(null)
     setIsSubmitting(true)
     try {
-      await api.updateClub(club.id, {
-        title,
-        monthlyContribution,
-        interestRate,
-        paymentDay,
-        gracePeriodDays,
-        earlyWithdrawalPenalty,
-      })
+      await api.updateClub(club.id, { title })
+      setSuccess('Club renamed.')
       onSaved()
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : 'Could not save settings')
+      setError(err instanceof ApiError ? err.message : 'Could not rename club')
     } finally {
       setIsSubmitting(false)
     }
@@ -431,109 +470,68 @@ function ClubSettingsForm({
         onClick={() => setIsOpen((v) => !v)}
         className="flex w-full items-center justify-between p-5 text-left"
       >
-        <span className="font-medium text-charcoal-900 dark:text-white">Club settings</span>
+        <span className="font-medium text-charcoal-900 dark:text-white">Club info</span>
         <span className={`text-charcoal-400 transition-transform ${isOpen ? 'rotate-180' : ''}`} aria-hidden>
           ▾
         </span>
       </button>
       {isOpen && (
-        <form onSubmit={handleSubmit} className="space-y-4 border-t border-charcoal-200 p-5 dark:border-charcoal-800">
-          <div>
+        <div className="space-y-5 border-t border-charcoal-200 p-5 dark:border-charcoal-800">
+          <form onSubmit={handleSubmit} className="space-y-2">
             <label htmlFor="settings-title" className="text-xs font-medium text-charcoal-500 dark:text-charcoal-400">
               Club name
             </label>
-            <input
-              id="settings-title"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-charcoal-300 bg-white px-3 py-2.5 text-sm text-charcoal-900 outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-charcoal-700 dark:bg-charcoal-950 dark:text-white"
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <NumberField
-              label={`Monthly $ (${CLUB_LIMITS.monthlyContribution.min}-${CLUB_LIMITS.monthlyContribution.max})`}
-              value={monthlyContribution}
-              onChange={setMonthlyContribution}
-              min={CLUB_LIMITS.monthlyContribution.min}
-              max={CLUB_LIMITS.monthlyContribution.max}
-            />
-            <NumberField
-              label={`Interest % (${CLUB_LIMITS.interestRate.min}-${CLUB_LIMITS.interestRate.max})`}
-              value={interestRate}
-              onChange={setInterestRate}
-              min={CLUB_LIMITS.interestRate.min}
-              max={CLUB_LIMITS.interestRate.max}
-            />
-            <NumberField label="Payment day (1-31)" value={paymentDay} onChange={setPaymentDay} min={1} max={31} />
-            <NumberField
-              label={`Grace days (${CLUB_LIMITS.gracePeriodDays.min}-${CLUB_LIMITS.gracePeriodDays.max})`}
-              value={gracePeriodDays}
-              onChange={setGracePeriodDays}
-              min={CLUB_LIMITS.gracePeriodDays.min}
-              max={CLUB_LIMITS.gracePeriodDays.max}
-            />
-            <NumberField
-              label={`Withdrawal penalty $ (${CLUB_LIMITS.earlyWithdrawalPenalty.min}-${CLUB_LIMITS.earlyWithdrawalPenalty.max})`}
-              value={earlyWithdrawalPenalty}
-              onChange={setEarlyWithdrawalPenalty}
-              min={CLUB_LIMITS.earlyWithdrawalPenalty.min}
-              max={CLUB_LIMITS.earlyWithdrawalPenalty.max}
-            />
-          </div>
+            <div className="flex gap-2">
+              <input
+                id="settings-title"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                className="flex-1 rounded-xl border border-charcoal-300 bg-white px-3 py-2.5 text-sm text-charcoal-900 outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-charcoal-700 dark:bg-charcoal-950 dark:text-white"
+              />
+              <button
+                type="submit"
+                disabled={isSubmitting || title === club.title}
+                className="shrink-0 rounded-full bg-primary-600 px-5 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60"
+              >
+                {isSubmitting ? 'Saving…' : 'Rename'}
+              </button>
+            </div>
+            {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
+            {success && <p className="text-sm text-primary-600 dark:text-primary-400">{success}</p>}
+          </form>
 
-          {error && (
-            <p className="rounded-lg bg-red-50 px-3 py-2 text-sm text-red-700 dark:bg-red-500/10 dark:text-red-400">
-              {error}
+          <div>
+            <p className="text-xs font-medium text-charcoal-500 dark:text-charcoal-400">
+              Financial terms — locked in at creation, can't be changed
             </p>
-          )}
-
-          <div className="flex flex-col gap-2 sm:flex-row">
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="flex-1 rounded-full bg-primary-600 py-2.5 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-60"
-            >
-              {isSubmitting ? 'Saving…' : 'Save settings'}
-            </button>
-            <button
-              type="button"
-              onClick={onDeleteRequest}
-              className="flex-1 rounded-full border border-red-200 py-2.5 text-sm font-semibold text-red-700 hover:bg-red-50 dark:border-red-500/20 dark:text-red-400 dark:hover:bg-red-500/10"
-            >
-              Delete club
-            </button>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              <ReadOnlyField label="Monthly contribution" value={`$${club.monthlyContribution}`} />
+              <ReadOnlyField label="Interest rate" value={`${club.interestRate}%`} />
+              <ReadOnlyField label="Payment day" value={String(club.paymentDay)} />
+              <ReadOnlyField label="Grace period" value={`${club.gracePeriodDays} day${club.gracePeriodDays === 1 ? '' : 's'}`} />
+              <ReadOnlyField label="Withdrawal penalty" value={`$${club.earlyWithdrawalPenalty}`} />
+            </div>
           </div>
-        </form>
+
+          <button
+            type="button"
+            onClick={onDeleteRequest}
+            className="w-full rounded-full border border-red-200 py-2.5 text-sm font-semibold text-red-700 hover:bg-red-50 dark:border-red-500/20 dark:text-red-400 dark:hover:bg-red-500/10"
+          >
+            Delete club
+          </button>
+        </div>
       )}
     </div>
   )
 }
 
-function NumberField({
-  label,
-  value,
-  onChange,
-  min = 0,
-  max,
-}: {
-  label: string
-  value: number
-  onChange: (n: number) => void
-  min?: number
-  max?: number
-}) {
+function ReadOnlyField({ label, value }: { label: string; value: string }) {
   return (
-    <div>
-      <label className="text-xs font-medium text-charcoal-500 dark:text-charcoal-400">{label}</label>
-      <input
-        type="number"
-        min={min}
-        max={max}
-        required
-        value={value}
-        onChange={(e) => onChange(Number(e.target.value))}
-        className="mt-1 w-full rounded-xl border border-charcoal-300 bg-white px-3 py-2.5 text-sm text-charcoal-900 outline-none focus:border-primary-500 focus:ring-2 focus:ring-primary-500/20 dark:border-charcoal-700 dark:bg-charcoal-950 dark:text-white"
-      />
+    <div className="rounded-xl border border-charcoal-200 bg-charcoal-50 px-3 py-2 dark:border-charcoal-800 dark:bg-charcoal-800/40">
+      <p className="text-[11px] text-charcoal-500 dark:text-charcoal-400">{label}</p>
+      <p className="text-sm font-semibold text-charcoal-700 dark:text-charcoal-200">{value}</p>
     </div>
   )
 }
+
