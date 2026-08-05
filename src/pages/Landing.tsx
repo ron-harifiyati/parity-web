@@ -101,7 +101,7 @@ export default function Landing() {
           <img
             src="https://images.unsplash.com/photo-1521791136064-7986c2920216?w=800&q=80&auto=format&fit=crop"
             alt="Two people shaking hands, representing trust between club members"
-            className="h-72 w-full object-cover lg:h-full"
+            className="h-72 w-full object-cover lg:order-2 lg:h-full"
             loading="lazy"
           />
           <div className="p-8 lg:p-12">
